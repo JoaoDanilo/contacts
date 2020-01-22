@@ -21,21 +21,21 @@ class ContactHelper {
       return _db;
     }
     else {
-      _db = await initDb();
+      return _db = await initDb();
     }
   }
 
   Future<Database> initDb() async {
 
     final dataBasesPath = await getDatabasesPath();
-    final path = join(dataBasesPath, "contacts.db");
+    final path = join(dataBasesPath, "contacts2.db");
 
     return await openDatabase(
       path, 
-      version: 1, 
+      version: 2, 
       onCreate: (Database db, int newerVersion) async {
         await db.execute(
-          "CREATE TABLE $contactTable($idColumn INTEGER PRIMARY KEY, $nameColumn TEXT, $emailColumn TEXT, $imgColumn TEXT)"
+          "CREATE TABLE $contactTable($idColumn INTEGER PRIMARY KEY, $nameColumn TEXT, $emailColumn TEXT, $phoneColumn TEXT, $imgColumn TEXT)"
         );
       }
     );
@@ -105,6 +105,8 @@ class Contact {
   String email;
   String phone;
   String img;
+
+  Contact();
 
   Contact.fromMap(Map map) {
     id = map[idColumn];
