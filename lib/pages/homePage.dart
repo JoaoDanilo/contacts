@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:contacts/helpers/contactHelper.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'contactPage.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -31,10 +34,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _floatButton() {
-    return  FloatingActionButton(
-              onPressed: (){},
+    return  FloatingActionButton(              
               child: Icon(Icons.add),
               backgroundColor: Colors.red,
+              onPressed: (){
+                showContactPage();
+              },
             );
   }
 
@@ -61,7 +66,8 @@ class _HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: contacts[index].img != null ? FileImage(File(contacts[index].img)): AssetImage("images/person.png")
+                    image: contacts[index].img != null ? FileImage(File(contacts[index].img)): AssetImage("images/person.png"),
+                    fit: BoxFit.cover
                   ),
                 ),
               ),
@@ -96,6 +102,10 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+      onTap: () {
+        // showContactPage(contact: contacts[index]);
+        showOptions(context, index);
+      },
     );
   }
 
@@ -104,14 +114,87 @@ class _HomePageState extends State<HomePage> {
     return main();
   }
 
-  @override
-  void initState() {
-    super.initState();
+  void showContactPage({Contact contact}) async {
+    final recContact = await Navigator.push(context, MaterialPageRoute(builder: (context) => ContactPage(contact: contact)));
 
+    if(recContact != null){
+      if(contact != null) {
+        await helper.updateContact(recContact);
+      }
+      else{
+        await helper.saveContact(recContact);
+      }
+      getAllConctacs();
+    }
+  }
+
+  void showOptions(BuildContext context, int index){
+    showModalBottomSheet(
+      context: context,
+      builder: (context){
+        return BottomSheet(
+          onClosing: (){},
+          builder: (context){
+            return Container(
+              padding: EdgeInsets.all(10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.all(10),
+                    child:  FlatButton(
+                              child: Text("Call", style: TextStyle(color: Colors.red, fontSize: 20)),
+                              onPressed: (){
+                                launch("tel:${contacts[index].phone}");
+                                Navigator.pop(context);
+                              },
+                            ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(10),
+                    child:  FlatButton(
+                              child: Text("Edit", style: TextStyle(color: Colors.red, fontSize: 20)),
+                              onPressed: (){
+                                Navigator.pop(context);
+                                showContactPage(contact: contacts[index]);
+
+                              },
+                            ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(10),
+                    child:  FlatButton(
+                              child: Text("Delete", style: TextStyle(color: Colors.red, fontSize: 20)),
+                              onPressed: (){
+                                helper.deleteContact(contacts[index].id);
+                                setState(() {
+                                  contacts.removeAt(index);
+                                });
+                                Navigator.pop(context);
+                              },
+                            ),
+                  ),
+                  
+                ],
+              ),
+            );
+          },
+        );
+      }
+    );
+  }
+
+  void getAllConctacs() {
     helper.getAll().then((list){
       setState(() {
         contacts = list;
       });      
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getAllConctacs();
   }
 }
